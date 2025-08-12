@@ -5,32 +5,39 @@ namespace App\Http\Controllers;
 use App\Models\Property;
 use App\Models\PropertyImage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class PropertyController extends Controller
 {
-    // Danh sách bất động sản + filter + sort + pagination
+    // Danh sách (có filter, sort, pagination)
     public function index(Request $request)
     {
         $query = Property::query();
 
-        // Tìm kiếm theo title
-        if ($request->has('search')) {
-            $query->where('title', 'like', '%' . $request->search . '%');
+        // Lọc
+        if ($request->has('city')) {
+            $query->where('city', $request->city);
         }
-
-        // Lọc theo loại
-        if ($request->has('property_type')) {
-            $query->where('property_type', $request->property_type);
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->has('min_price')) {
+            $query->where('price', '>=', $request->min_price);
+        }
+        if ($request->has('max_price')) {
+            $query->where('price', '<=', $request->max_price);
         }
 
         // Sắp xếp
-        if ($request->has('sort_by') && $request->has('order')) {
-            $query->orderBy($request->sort_by, $request->order);
-        }
+        $sortBy = $request->get('sort_by', 'created_at');
+        $order = $request->get('order', 'desc');
+        $query->orderBy($sortBy, $order);
 
-        return response()->json($query->paginate($request->get('per_page', 10)));
+        return response()->json(
+            $query->paginate($request->get('per_page', 10))
+        );
     }
 
     // Tạo mới
@@ -39,10 +46,14 @@ class PropertyController extends Controller
         $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'property_type' => 'required|in:apartment,house,villa,office,land',
+            'status' => 'in:available,sold,rented,pending',
             'price' => 'required|numeric',
             'area' => 'required|numeric',
-            'contact_name' => 'required|string|max:255',
-            'contact_phone' => 'required|string|max:20',
+            'address' => 'required|string',
+            'city' => 'required|string',
+            'district' => 'required|string',
+            'contact_name' => 'required|string',
+            'contact_phone' => 'required|string',
             'images.*' => 'image|mimes:jpg,jpeg,png|max:2048'
         ]);
 
@@ -50,57 +61,77 @@ class PropertyController extends Controller
             return response()->json($validator->errors(), 422);
         }
 
-        $property = Property::create($request->except('images'));
+        $data = $request->all();
+        $data['created_by'] = Auth::id();
 
-        // Upload nhiều ảnh
+        $property = Property::create($data);
+
+        // Upload ảnh nếu có
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $index => $file) {
-                $path = $file->store('properties', 'public');
+            foreach ($request->file('images') as $key => $image) {
+                $path = $image->store('property_images', 'public');
                 PropertyImage::create([
                     'property_id' => $property->id,
                     'image_path' => $path,
-                    'image_name' => $file->getClientOriginalName(),
-                    'is_primary' => $index === 0
+                    'image_name' => $image->getClientOriginalName(),
+                    'is_primary' => $key === 0
                 ]);
             }
         }
 
-        return response()->json($property, 201);
+        return response()->json($property->load('images'), 201);
     }
 
     // Xem chi tiết
-    public function show($id)
+    public function show(Property $property)
     {
-        $property = Property::with('images')->findOrFail($id);
-        return response()->json($property);
+        return response()->json($property->load('images'));
     }
 
     // Cập nhật
-    public function update(Request $request, $id)
+    public function update(Request $request, Property $property)
     {
-        $property = Property::findOrFail($id);
-        $property->update($request->except('images'));
+        $validator = Validator::make($request->all(), [
+            'property_type' => 'in:apartment,house,villa,office,land',
+            'status' => 'in:available,sold,rented,pending',
+            'images.*' => 'image|mimes:jpg,jpeg,png|max:2048'
+        ]);
 
-        // Nếu upload ảnh mới
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        $data = $request->all();
+        $data['updated_by'] = Auth::id();
+        $property->update($data);
+
+        // Thêm ảnh mới
         if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $file) {
-                $path = $file->store('properties', 'public');
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('property_images', 'public');
                 PropertyImage::create([
                     'property_id' => $property->id,
                     'image_path' => $path,
-                    'image_name' => $file->getClientOriginalName()
+                    'image_name' => $image->getClientOriginalName(),
                 ]);
             }
         }
 
-        return response()->json($property);
+        return response()->json($property->load('images'));
     }
 
-    // Xóa mềm
-    public function destroy($id)
+    // Xóa (soft delete)
+    public function destroy(Property $property)
     {
-        $property = Property::findOrFail($id);
         $property->delete();
-        return response()->json(['message' => 'Deleted successfully']);
+        return response()->json(['message' => 'Property deleted']);
+    }
+
+    // Khôi phục
+    public function restore($id)
+    {
+        $property = Property::withTrashed()->findOrFail($id);
+        $property->restore();
+        return response()->json(['message' => 'Property restored']);
     }
 }
