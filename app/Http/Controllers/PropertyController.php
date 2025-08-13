@@ -11,34 +11,40 @@ use Illuminate\Support\Facades\Storage;
 
 class PropertyController extends Controller
 {
-    // Danh sách (có filter, sort, pagination)
+    // Danh sách (filter, sort, pagination)
     public function index(Request $request)
     {
-        $query = Property::query();
+    $query = Property::query();
 
-        // Lọc
-        if ($request->has('city')) {
-            $query->where('city', $request->city);
-        }
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-        if ($request->has('min_price')) {
-            $query->where('price', '>=', $request->min_price);
-        }
-        if ($request->has('max_price')) {
-            $query->where('price', '<=', $request->max_price);
-        }
-
-        // Sắp xếp
-        $sortBy = $request->get('sort_by', 'created_at');
-        $order = $request->get('order', 'desc');
-        $query->orderBy($sortBy, $order);
-
-        return response()->json(
-            $query->paginate($request->get('per_page', 10))
-        );
+    // Lọc chỉ khi param có giá trị
+    if ($request->filled('city')) {
+        $query->where('city', 'like', '%' . $request->city . '%');
     }
+    if ($request->filled('status')) {
+        $query->where('status', $request->status);
+    }
+    if ($request->filled('property_type')) {
+        $query->where('property_type', $request->property_type);
+    }
+    if ($request->filled('min_price')) {
+        $query->where('price', '>=', $request->min_price);
+    }
+    if ($request->filled('max_price')) {
+        $query->where('price', '<=', $request->max_price);
+    }
+    if ($request->filled('search')) {
+        $query->where('title', 'like', '%'.$request->search.'%');
+    }
+
+    // Sắp xếp
+    $sortBy = $request->get('sort_by', 'created_at');
+    $order = $request->get('order', 'desc');
+    $query->orderBy($sortBy, $order);
+
+    // Phân trang
+    return response()->json($query->paginate($request->get('per_page', 10)));
+    }
+
 
     // Tạo mới
     public function store(Request $request)
