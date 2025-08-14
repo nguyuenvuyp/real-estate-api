@@ -29,7 +29,7 @@ mysql -u root -p
 CREATE DATABASE real_estate CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 EXIT;
 ```
-> Lưu ý: ở câu lệnh mysql -u root -p, khi chạy xong có yêu cầu điền password, có thể để trống, nếu bạn điền password, thì cũng điền vào DB_PASSWORD trong .env
+> Lưu ý: ở câu lệnh mysql -u root -p, khi chạy xong có yêu cầu điền password, có thể để trống, nếu bạn điền password, thì cũng điền vào DB_PASSWORD trong .env, và khi tạo db real_estate, có thể nhận được thông báo đã tồn tại, lúc này có thể xóa db cũ có trùng tên đi và chạy lại câu lệnh này(mở laragon, vào "Cơ sở dữ liệu", chọn vào Laragon.MySQL, lúc này sẽ có danh sách db xổ ra, chuột phải vào db cần xóa và chọn drop database)
 
 ### Bước 4: Cấu hình .env
 - Sao chép file bằng lệnh:
