@@ -39,12 +39,14 @@ hoặc tìm đến file .env.example copy thủ công nội dung sang file .
 > Trong file .env, app url đang có giá trị APP_URL=http://localhost, nếu chạy local thì ok, nếu k hãy sửa chỗ này cho khớp
 
 - Dù đã copy env, nhưng hãy chú ý check lại các tham số quan trọng (mặc định khi tạo .enx thì các trường này bị comment bằng dấu "#") dưới đây, tránh để chúng bị comment lại:
+```bash
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=real_estate
 DB_USERNAME=root
 DB_PASSWORD=
+```
  
 
 ### Bước 5: Khởi tạo ứng dụng
