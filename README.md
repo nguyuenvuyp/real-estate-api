@@ -9,7 +9,7 @@
 - Khi cài đặt xong, có thể chọn option ngôn ngữ là tiếng việt
 - Mở Laragon, bấm **Chạy** để chạy Apache/Nginx và MySQL.
 
-> Lưu ý: Laragon mặc định MySQL user là `root`, mật khẩu rỗng (`""`).
+> Lưu ý: Laragon mặc định MySQL user là `root`, mật khẩu rỗng (`""`). và toàn bộ các lệnh nếu có gõ tay ở terminal không được để bộ gõ chữ tiếng việt
 
 ---
 
@@ -29,6 +29,7 @@ mysql -u root -p
 CREATE DATABASE real_estate CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 EXIT;
 ```
+> Lưu ý: ở câu lệnh mysql -u root -p, khi chạy xong có yêu cầu điền password, có thể để trống, nếu bạn điền password, thì cũng điền vào DB_PASSWORD trong .env
 
 ### Bước 4: Cấu hình .env
 - Sao chép file bằng lệnh:
